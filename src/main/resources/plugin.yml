@@ -1,0 +1,4 @@
+name: DeathHead
+version: '1.0'
+main: io.sicfran.deathHead.DeathHead
+api-version: '1.21'
