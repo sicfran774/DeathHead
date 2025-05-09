@@ -3,6 +3,8 @@ package io.sicfran.deathHead.listeners;
 import io.sicfran.deathHead.DeathHead;
 import io.sicfran.deathHead.data.HeadData;
 import io.sicfran.deathHead.data.InventoryManager;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -17,9 +19,6 @@ import org.bukkit.persistence.PersistentDataType;
 
 import java.time.Instant;
 import java.util.ArrayList;
-
-import static net.kyori.adventure.text.Component.text;
-import static net.kyori.adventure.text.format.TextColor.color;
 
 public class OnPlayerDeath implements Listener {
 
@@ -36,10 +35,22 @@ public class OnPlayerDeath implements Listener {
         Inventory copyInv = Bukkit.createInventory(null, InventoryManager.multipleOf9(originalInv.getSize()));
         copyInv.setContents(originalInv.getContents());
 
+        // Prevent player drops so that items aren't duplicated
         event.getDrops().clear();
+
         Block block = player.getLocation().getBlock();
         Instant timeNow = Instant.now();
-        Location location = createHead(player, block, timeNow);
+
+        Component causeOfDeathComponent = event.deathMessage();
+        if (causeOfDeathComponent == null){
+            return;
+        }
+        String causeOfDeath = PlainTextComponentSerializer.plainText().serialize(causeOfDeathComponent);
+
+        Location location = createHead(player, block, timeNow, causeOfDeath);
+
+        // Spawn armor stands for head information
+        plugin.spawnDeathHeadInfo(location, player.getName(), timeNow.toString());
 
         // Add player head and its items to the InventoryManager
         plugin.getInventoryManager().getPlayers().computeIfAbsent(player.getUniqueId(),
@@ -49,20 +60,17 @@ public class OnPlayerDeath implements Listener {
         plugin.getInventoryManager().saveInventories();
     }
 
-    private Location createHead(Player player, Block block, Instant timeNow){
+    private Location createHead(Player player, Block block, Instant timeNow, String causeOfDeath){
         block.setType(Material.PLAYER_HEAD);
         Skull skull = (Skull) block.getState();
 
         // Set player as owner to show skin's head
         skull.setOwningPlayer(player);
-
-        // Set player info
-        plugin.spawnFloatingText(skull.getLocation(), text(player.getName(), color(0x00d0ff)));
-        plugin.spawnFloatingText(skull.getLocation().clone().add(0, 0.25, 0), text(timeNow.toString(), color(0x00d0ff)));
-
+        // Add info to skull
         skull.getPersistentDataContainer().set(plugin.getPlayerUUIDKey(), PersistentDataType.STRING, player.getUniqueId().toString());
-        skull.getPersistentDataContainer().set(plugin.getTimeKey(), PersistentDataType.LONG, timeNow.toEpochMilli());
-
+        skull.getPersistentDataContainer().set(plugin.getTimeOfDeathKey(), PersistentDataType.LONG, timeNow.toEpochMilli());
+        skull.getPersistentDataContainer().set(plugin.getCauseOfDeathKey(), PersistentDataType.STRING, causeOfDeath);
+        // Update changes in game
         skull.update();
 
         return skull.getLocation();

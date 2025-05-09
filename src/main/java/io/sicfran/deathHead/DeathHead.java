@@ -9,14 +9,24 @@ import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.NamespacedKey;
 import org.bukkit.entity.ArmorStand;
+import org.bukkit.persistence.PersistentDataContainer;
+import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.block.Skull;
+
+import java.util.UUID;
+
+import static net.kyori.adventure.text.Component.text;
+import static net.kyori.adventure.text.format.TextColor.color;
 
 public final class DeathHead extends JavaPlugin {
 
     private static final String VERSION = "1.0";
     private final NamespacedKey playerUUIDKey = new NamespacedKey(this, "owner");
-    private final NamespacedKey timeKey = new NamespacedKey(this, "placed_time");
+    private final NamespacedKey timeOfDeathKey = new NamespacedKey(this, "time_death");
+    private final NamespacedKey causeOfDeathKey = new NamespacedKey(this, "cause_death");
     private final InventoryManager inventoryManager = new InventoryManager(this);
+    public static float ARMOR_STAND_HEIGHT = 1;
 
     @Override
     public void onEnable() {
@@ -38,16 +48,22 @@ public final class DeathHead extends JavaPlugin {
         Bukkit.getPluginManager().registerEvents(new OnPlayerBlockBreak(this), this);
     }
 
-    public NamespacedKey getPlayerUUIDKey() {
-        return playerUUIDKey;
+    public UUID getPlayerIdFromSkull(Skull skull) {
+        PersistentDataContainer container = skull.getPersistentDataContainer();
+        String uuidString = container.get(getPlayerUUIDKey(), PersistentDataType.STRING);
+
+        if (uuidString == null) return null;
+
+        return UUID.fromString(uuidString);
     }
 
-    public NamespacedKey getTimeKey() {
-        return timeKey;
+    public void spawnDeathHeadInfo(Location location, String name, String time){
+        spawnFloatingText(location.clone().add(0, 0.25, 0), text(name, color(0x00d0ff)));
+        spawnFloatingText(location, text(time, color(0x00d0ff)));
     }
 
-    public void spawnFloatingText(Location location, Component text){
-        location = location.clone().add(0.5, 1, 0.5);
+    private void spawnFloatingText(Location location, Component text){
+        location = location.clone().add(0.5, ARMOR_STAND_HEIGHT, 0.5);
 
         ArmorStand stand = location.getWorld().spawn(location, ArmorStand.class);
         stand.setVisible(false);
@@ -60,5 +76,17 @@ public final class DeathHead extends JavaPlugin {
 
     public InventoryManager getInventoryManager() {
         return inventoryManager;
+    }
+
+    public NamespacedKey getPlayerUUIDKey() {
+        return playerUUIDKey;
+    }
+
+    public NamespacedKey getTimeOfDeathKey() {
+        return timeOfDeathKey;
+    }
+
+    public NamespacedKey getCauseOfDeathKey() {
+        return causeOfDeathKey;
     }
 }

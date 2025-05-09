@@ -73,8 +73,12 @@ public class InventoryManager {
         }
     }
 
+    public List<HeadData> getAllHeadData(UUID playerId){
+        return players.getOrDefault(playerId, null);
+    }
+
     public static int multipleOf9(int num){
-        return num + (9 - (num % 9));
+        return num % 9 == 0 ? num : num + (9 - (num % 9));
     }
 
     public Map<UUID, List<HeadData>> getPlayers() {
