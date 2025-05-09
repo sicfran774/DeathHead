@@ -2,6 +2,7 @@ package io.sicfran.deathHead;
 
 import io.sicfran.deathHead.data.InventoryManager;
 import io.sicfran.deathHead.listeners.OnPlayerBlockBreak;
+import io.sicfran.deathHead.listeners.OnPlayerBlockPlace;
 import io.sicfran.deathHead.listeners.OnPlayerDeath;
 import io.sicfran.deathHead.listeners.OnPlayerInteract;
 import net.kyori.adventure.text.Component;
@@ -9,11 +10,15 @@ import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.NamespacedKey;
 import org.bukkit.entity.ArmorStand;
+import org.bukkit.entity.Player;
 import org.bukkit.persistence.PersistentDataContainer;
+import org.bukkit.persistence.PersistentDataHolder;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.block.Skull;
+import org.bukkit.inventory.meta.SkullMeta;
 
+import java.time.Instant;
 import java.util.UUID;
 
 import static net.kyori.adventure.text.Component.text;
@@ -46,15 +51,41 @@ public final class DeathHead extends JavaPlugin {
         Bukkit.getPluginManager().registerEvents(new OnPlayerDeath(this), this);
         Bukkit.getPluginManager().registerEvents(new OnPlayerInteract(this), this);
         Bukkit.getPluginManager().registerEvents(new OnPlayerBlockBreak(this), this);
+        Bukkit.getPluginManager().registerEvents(new OnPlayerBlockPlace(this), this);
     }
 
-    public UUID getPlayerIdFromSkull(Skull skull) {
-        PersistentDataContainer container = skull.getPersistentDataContainer();
+    public UUID getPlayerIdFromSkull(PersistentDataHolder holder){
+        PersistentDataContainer container = holder.getPersistentDataContainer();
         String uuidString = container.get(getPlayerUUIDKey(), PersistentDataType.STRING);
 
         if (uuidString == null) return null;
 
         return UUID.fromString(uuidString);
+    }
+
+    public String getCauseOfDeathFromSkull(PersistentDataHolder holder){
+        PersistentDataContainer container = holder.getPersistentDataContainer();
+        return container.get(getCauseOfDeathKey(), PersistentDataType.STRING);
+    }
+
+    public Long getTimeOfDeathFromSkull(PersistentDataHolder holder){
+        PersistentDataContainer container = holder.getPersistentDataContainer();
+        return container.get(getTimeOfDeathKey(), PersistentDataType.LONG);
+    }
+
+    public void setPDCtoSkull(Skull skull, Player player, Instant timeOfDeath, String causeOfDeath){
+        skull.getPersistentDataContainer().set(getPlayerUUIDKey(), PersistentDataType.STRING, player.getUniqueId().toString());
+        skull.getPersistentDataContainer().set(getTimeOfDeathKey(), PersistentDataType.LONG, timeOfDeath.toEpochMilli());
+        skull.getPersistentDataContainer().set(getCauseOfDeathKey(), PersistentDataType.STRING, causeOfDeath);
+
+        // Update changes in game
+        skull.update();
+    }
+
+    public void setPDCtoSkull(SkullMeta skullMeta, Player player, Instant timeOfDeath, String causeOfDeath){
+        skullMeta.getPersistentDataContainer().set(getPlayerUUIDKey(), PersistentDataType.STRING, player.getUniqueId().toString());
+        skullMeta.getPersistentDataContainer().set(getTimeOfDeathKey(), PersistentDataType.LONG, timeOfDeath.toEpochMilli());
+        skullMeta.getPersistentDataContainer().set(getCauseOfDeathKey(), PersistentDataType.STRING, causeOfDeath);
     }
 
     public void spawnDeathHeadInfo(Location location, String name, String time){

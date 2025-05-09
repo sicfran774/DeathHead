@@ -15,7 +15,6 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.inventory.Inventory;
-import org.bukkit.persistence.PersistentDataType;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -39,6 +38,13 @@ public class OnPlayerDeath implements Listener {
         event.getDrops().clear();
 
         Block block = player.getLocation().getBlock();
+
+        // Prevent block from generating on an existing head
+        // Loop until there's a free block above
+        while(block.getState() instanceof Skull && block.getY() < player.getWorld().getMaxHeight()){
+            block = player.getWorld().getBlockAt(block.getLocation().clone().add(0, 1, 0));
+        }
+
         Instant timeNow = Instant.now();
 
         Component causeOfDeathComponent = event.deathMessage();
@@ -67,11 +73,7 @@ public class OnPlayerDeath implements Listener {
         // Set player as owner to show skin's head
         skull.setOwningPlayer(player);
         // Add info to skull
-        skull.getPersistentDataContainer().set(plugin.getPlayerUUIDKey(), PersistentDataType.STRING, player.getUniqueId().toString());
-        skull.getPersistentDataContainer().set(plugin.getTimeOfDeathKey(), PersistentDataType.LONG, timeNow.toEpochMilli());
-        skull.getPersistentDataContainer().set(plugin.getCauseOfDeathKey(), PersistentDataType.STRING, causeOfDeath);
-        // Update changes in game
-        skull.update();
+        plugin.setPDCtoSkull(skull, player, timeNow, causeOfDeath);
 
         return skull.getLocation();
     }

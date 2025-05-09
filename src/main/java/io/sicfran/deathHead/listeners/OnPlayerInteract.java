@@ -16,11 +16,9 @@ import java.util.UUID;
 public class OnPlayerInteract implements Listener {
 
     private final DeathHead plugin;
-    //private final Map<Location, Inventory> heads;
 
     public OnPlayerInteract(DeathHead plugin){
         this.plugin = plugin;
-        //heads = plugin.getInventoryManager().getPlayers();
     }
 
     @EventHandler
@@ -28,6 +26,7 @@ public class OnPlayerInteract implements Listener {
         // Only allow main hand right click
         if (!event.getAction().isRightClick()) return;
         if (event.getHand() != EquipmentSlot.HAND) return;
+
 
         Player player = event.getPlayer();
         Block block = event.getClickedBlock();
@@ -42,6 +41,8 @@ public class OnPlayerInteract implements Listener {
         if (playerData == null || playerData.isEmpty()){
             return;
         }
+
+        event.setCancelled(true); //Prevent any accidental actions, only allow opening head inventory
 
         for (HeadData head : playerData){
             // Find specific head inventory at this location

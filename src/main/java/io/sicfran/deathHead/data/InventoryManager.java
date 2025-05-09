@@ -48,7 +48,6 @@ public class InventoryManager {
 
         try{
             config.save(playerDataFile);
-            plugin.getLogger().info(players.toString());
         } catch (IOException e){
             plugin.getLogger().severe("Failed to save inventories.yml");
         }

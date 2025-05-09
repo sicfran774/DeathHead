@@ -16,7 +16,6 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.SkullMeta;
-import org.bukkit.persistence.PersistentDataType;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -31,11 +30,9 @@ import static net.kyori.adventure.text.Component.text;
 public class OnPlayerBlockBreak implements Listener {
 
     private final DeathHead plugin;
-    //private final Map<Location, Inventory> heads;
 
     public OnPlayerBlockBreak(DeathHead plugin){
         this.plugin = plugin;
-        //heads = plugin.getInventoryManager().getPlayers();
     }
 
     @EventHandler
@@ -47,19 +44,24 @@ public class OnPlayerBlockBreak implements Listener {
             return;
         }
 
-        player.sendMessage("Broke skull.");
-
         UUID playerId = plugin.getPlayerIdFromSkull(skull);
+        Long timeOfDeath = plugin.getTimeOfDeathFromSkull(skull);
+        String causeOfDeath = plugin.getCauseOfDeathFromSkull(skull);
+
         Location location = skull.getLocation();
         List<HeadData> playerData = plugin.getInventoryManager().getAllHeadData(playerId);
 
-        if (playerData == null || playerData.isEmpty()){
+        if(playerId == null || timeOfDeath == null || causeOfDeath == null){
             return;
         }
 
         event.setDropItems(false); //Prevent original head from dropping
-        ItemStack skullHead = dropHeadWithLore(player.getName(), skull);
+        ItemStack skullHead = dropHeadWithLore(player, skull);
         skull.getWorld().dropItemNaturally(location, skullHead);
+
+        if (playerData == null || playerData.isEmpty()){
+            return;
+        }
 
         for (HeadData head : playerData){
             // Find the specific skull that the player broke
@@ -80,11 +82,12 @@ public class OnPlayerBlockBreak implements Listener {
         }
     }
 
-    private ItemStack dropHeadWithLore(String name, Skull skull){
+    private ItemStack dropHeadWithLore(Player player, Skull skull){
         ItemStack skullDrop = new ItemStack(Material.PLAYER_HEAD);
         SkullMeta meta = (SkullMeta) skullDrop.getItemMeta();
 
-        meta.customName(text(name + "'s Head"));
+        plugin.setPDCtoSkull(meta, player, Instant.ofEpochMilli(plugin.getTimeOfDeathFromSkull(skull)), plugin.getCauseOfDeathFromSkull(skull));
+        meta.customName(text(player.getName() + "'s Head"));
         meta.setOwningPlayer(skull.getOwningPlayer());
         meta.lore(addLoreToSkull(skull));
         skullDrop.setItemMeta(meta);
@@ -95,15 +98,8 @@ public class OnPlayerBlockBreak implements Listener {
     private List<Component> addLoreToSkull(Skull skull){
         List<Component> lore = new ArrayList<>();
 
-        String causeOfDeath = skull.getPersistentDataContainer().get(plugin.getCauseOfDeathKey(), PersistentDataType.STRING);
-        Long timeOfDeath = skull.getPersistentDataContainer().get(plugin.getTimeOfDeathKey(), PersistentDataType.LONG);
-
-        if(causeOfDeath == null || timeOfDeath == null){
-            return lore;
-        }
-
-        lore.add(text(causeOfDeath));
-        lore.add(text(Instant.ofEpochMilli(timeOfDeath).toString()));
+        lore.add(text(plugin.getCauseOfDeathFromSkull(skull)));
+        lore.add(text(Instant.ofEpochMilli(plugin.getTimeOfDeathFromSkull(skull)).toString()));
 
         return lore;
     }
