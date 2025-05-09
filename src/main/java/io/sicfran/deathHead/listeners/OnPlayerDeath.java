@@ -31,7 +31,7 @@ public class OnPlayerDeath implements Listener {
     public void onPlayerDeath(PlayerDeathEvent event){
         Player player = event.getPlayer();
         Inventory originalInv = player.getInventory();
-        Inventory copyInv = Bukkit.createInventory(null, InventoryManager.multipleOf9(originalInv.getSize()));
+        Inventory copyInv = Bukkit.createInventory(null, InventoryManager.multipleOf9(originalInv.getSize()), Component.text(player.getName() + "'s items"));
         copyInv.setContents(originalInv.getContents());
 
         // Prevent player drops so that items aren't duplicated
@@ -41,7 +41,7 @@ public class OnPlayerDeath implements Listener {
 
         // Prevent block from generating on an existing head
         // Loop until there's a free block above
-        while(block.getState() instanceof Skull && block.getY() < player.getWorld().getMaxHeight()){
+        while(!(block.getType() == Material.AIR) && block.getY() < player.getWorld().getMaxHeight()){
             block = player.getWorld().getBlockAt(block.getLocation().clone().add(0, 1, 0));
         }
 

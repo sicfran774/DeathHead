@@ -1,19 +1,21 @@
 package io.sicfran.deathHead;
 
 import io.sicfran.deathHead.data.InventoryManager;
-import io.sicfran.deathHead.listeners.OnPlayerBlockBreak;
-import io.sicfran.deathHead.listeners.OnPlayerBlockPlace;
-import io.sicfran.deathHead.listeners.OnPlayerDeath;
-import io.sicfran.deathHead.listeners.OnPlayerInteract;
+import io.sicfran.deathHead.listeners.*;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.NamespacedKey;
+import org.bukkit.block.Block;
+import org.bukkit.block.BlockState;
+import org.bukkit.block.TileState;
 import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.Player;
+import org.bukkit.event.Listener;
 import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataHolder;
 import org.bukkit.persistence.PersistentDataType;
+import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.block.Skull;
 import org.bukkit.inventory.meta.SkullMeta;
@@ -48,10 +50,20 @@ public final class DeathHead extends JavaPlugin {
     }
 
     private void registerListeners(){
-        Bukkit.getPluginManager().registerEvents(new OnPlayerDeath(this), this);
-        Bukkit.getPluginManager().registerEvents(new OnPlayerInteract(this), this);
-        Bukkit.getPluginManager().registerEvents(new OnPlayerBlockBreak(this), this);
-        Bukkit.getPluginManager().registerEvents(new OnPlayerBlockPlace(this), this);
+        registerEvents(
+                new OnPlayerDeath(this),
+                new OnPlayerInteract(this),
+                new OnPlayerBlockBreak(this),
+                new OnPlayerBlockPlace(this),
+                new BlockProtections(this)
+        );
+    }
+
+    private void registerEvents(Listener... listeners){
+        PluginManager pm = Bukkit.getPluginManager();
+        for(Listener listener : listeners){
+            pm.registerEvents(listener, this);
+        }
     }
 
     public UUID getPlayerIdFromSkull(PersistentDataHolder holder){
@@ -91,6 +103,19 @@ public final class DeathHead extends JavaPlugin {
     public void spawnDeathHeadInfo(Location location, String name, String time){
         spawnFloatingText(location.clone().add(0, 0.25, 0), text(name, color(0x00d0ff)));
         spawnFloatingText(location, text(time, color(0x00d0ff)));
+    }
+
+    public boolean isProtectedHead(Block block){
+        BlockState state = block.getState();
+
+        if(!(state instanceof TileState tileState)){
+            return false;
+        }
+
+        PersistentDataContainer container = tileState.getPersistentDataContainer();
+        return container.has(getPlayerUUIDKey(), PersistentDataType.STRING) &&
+                container.has(getTimeOfDeathKey(), PersistentDataType.LONG) &&
+                container.has(getCauseOfDeathKey(), PersistentDataType.STRING);
     }
 
     private void spawnFloatingText(Location location, Component text){
