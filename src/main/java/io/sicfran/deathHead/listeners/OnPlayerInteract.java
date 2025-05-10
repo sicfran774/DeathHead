@@ -18,7 +18,7 @@ public class OnPlayerInteract implements Listener {
     private final DeathHead plugin;
 
     public OnPlayerInteract(DeathHead plugin){
-        this.plugin = plugin;
+            this.plugin = plugin;
     }
 
     @EventHandler
@@ -48,6 +48,7 @@ public class OnPlayerInteract implements Listener {
             // Find specific head inventory at this location
             if (head.location().equals(skull.getLocation())){
                 player.openInventory(head.inventory());
+                plugin.getInventoryManager().addToOpenInventories(playerId, head); //Save for later to deal with
                 break;
             }
         }

@@ -1,5 +1,8 @@
 package io.sicfran.deathHead;
 
+import com.mojang.brigadier.Command;
+import com.mojang.brigadier.context.CommandContext;
+import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.sicfran.deathHead.data.InventoryManager;
 import io.sicfran.deathHead.listeners.*;
 import net.kyori.adventure.text.Component;
@@ -9,9 +12,11 @@ import org.bukkit.NamespacedKey;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockState;
 import org.bukkit.block.TileState;
+import org.bukkit.command.CommandSender;
 import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Listener;
+import org.bukkit.inventory.Inventory;
 import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataHolder;
 import org.bukkit.persistence.PersistentDataType;
@@ -46,7 +51,13 @@ public final class DeathHead extends JavaPlugin {
 
     @Override
     public void onDisable() {
-        // Plugin shutdown logic
+        preventDupeOnServerShutdown();
+    }
+
+    public int printInfo(CommandContext<CommandSourceStack> ctx){
+        CommandSender sender = ctx.getSource().getSender();
+        sender.sendMessage(inventoryManager.getOpenInventories().toString());
+        return Command.SINGLE_SUCCESS;
     }
 
     private void registerListeners(){
@@ -55,7 +66,8 @@ public final class DeathHead extends JavaPlugin {
                 new OnPlayerInteract(this),
                 new OnPlayerBlockBreak(this),
                 new OnPlayerBlockPlace(this),
-                new BlockProtections(this)
+                new BlockProtections(this),
+                new OnInventoryChange(this)
         );
     }
 
@@ -128,6 +140,17 @@ public final class DeathHead extends JavaPlugin {
         stand.setMarker(true);
         stand.setGravity(false);
         stand.setSilent(true);
+    }
+
+    private void preventDupeOnServerShutdown(){
+        // Traverse each player looking inside skull chest
+        for (UUID playerId : inventoryManager.getOpenInventories().keySet()){
+            Player player = Bukkit.getPlayer(playerId);
+            if (player != null){
+                Inventory openInv = player.getOpenInventory().getTopInventory();
+                inventoryManager.saveInventoryChanges(playerId, openInv);
+            }
+        }
     }
 
     public InventoryManager getInventoryManager() {

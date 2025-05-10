@@ -2,6 +2,7 @@ package io.sicfran.deathHead.data;
 
 import io.sicfran.deathHead.DeathHead;
 import org.bukkit.configuration.file.YamlConfiguration;
+import org.bukkit.inventory.Inventory;
 
 import java.io.File;
 import java.io.IOException;
@@ -10,6 +11,7 @@ import java.util.*;
 public class InventoryManager {
 
     private final Map<UUID, List<HeadData>> players = new HashMap<>();
+    private final Map<UUID, HeadData> openInventories = new HashMap<>();
     private final DeathHead plugin;
     private final File playerDataFile;
     private final YamlConfiguration config;
@@ -64,12 +66,30 @@ public class InventoryManager {
             assert rawData != null;
             for (Map<?,?> rawMap : rawData){
                 Map<String, Object> serialized = (Map<String, Object>) rawMap;
-                HeadData deserialized = HeadData.deserialize(serialized);
+                HeadData deserialized = HeadData.deserialize(key, serialized);
                 headData.add(deserialized);
             }
 
             players.put(UUID.fromString(key), headData);
         }
+    }
+
+    public void addToOpenInventories(UUID playerId, HeadData head){
+        openInventories.put(playerId, head);
+    }
+
+    public HeadData removeFromOpenInventories(UUID playerId){
+        return openInventories.remove(playerId);
+    }
+
+    public void saveInventoryChanges(UUID playerId, Inventory inventory){
+        HeadData headData = removeFromOpenInventories(playerId);
+        headData.inventory().setContents(inventory.getContents());
+        saveInventories();
+    }
+
+    public Map<UUID, HeadData> getOpenInventories() {
+        return openInventories;
     }
 
     public List<HeadData> getAllHeadData(UUID playerId){
