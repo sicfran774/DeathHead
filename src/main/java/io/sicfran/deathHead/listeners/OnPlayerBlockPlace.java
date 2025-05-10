@@ -1,6 +1,7 @@
 package io.sicfran.deathHead.listeners;
 
 import io.sicfran.deathHead.DeathHead;
+import org.bukkit.Bukkit;
 import org.bukkit.block.Block;
 import org.bukkit.block.Skull;
 import org.bukkit.entity.Player;
@@ -25,7 +26,6 @@ public class OnPlayerBlockPlace implements Listener {
     public void onPlayerBlockPlace(BlockPlaceEvent event){
         ItemStack item = event.getItemInHand();
         Block block = event.getBlock();
-        Player player = event.getPlayer();
 
         if(!(item.getItemMeta() instanceof SkullMeta skullMeta) || !(block.getState() instanceof Skull skull)){
             return;
@@ -36,6 +36,11 @@ public class OnPlayerBlockPlace implements Listener {
         String causeOfDeath = plugin.getCauseOfDeathFromSkull(skullMeta);
 
         if(playerId == null || causeOfDeath == null || timeOfDeath == null){
+            return;
+        }
+
+        Player player = Bukkit.getPlayer(playerId);
+        if(player == null){
             return;
         }
 
