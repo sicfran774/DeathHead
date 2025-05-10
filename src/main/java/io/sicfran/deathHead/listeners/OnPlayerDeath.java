@@ -10,6 +10,7 @@ import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.block.Skull;
+import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -18,6 +19,9 @@ import org.bukkit.inventory.Inventory;
 
 import java.time.Instant;
 import java.util.ArrayList;
+
+import static net.kyori.adventure.text.Component.text;
+import static net.kyori.adventure.text.format.TextColor.color;
 
 public class OnPlayerDeath implements Listener {
 
@@ -56,7 +60,7 @@ public class OnPlayerDeath implements Listener {
         Location location = createHead(player, block, timeNow, causeOfDeath);
 
         // Spawn armor stands for head information
-        plugin.spawnDeathHeadInfo(location, player.getName(), timeNow.toString());
+        spawnDeathHeadInfo(location, player.getName(), plugin.formatTime(timeNow), causeOfDeath);
 
         // Add player head and its items to the InventoryManager
         plugin.getInventoryManager().getPlayers().computeIfAbsent(player.getUniqueId(),
@@ -64,6 +68,24 @@ public class OnPlayerDeath implements Listener {
         ).add(new HeadData(timeNow, location, copyInv));
 
         plugin.getInventoryManager().saveInventories();
+    }
+
+    private void spawnDeathHeadInfo(Location location, String name, String time, String causeOfDeath){
+        spawnFloatingText(location.clone().add(0, 0.5, 0), text(name, color(0x00d0ff)));
+        spawnFloatingText(location.clone().add(0, 0.25, 0), text(time, color(0x00d0ff)));
+        spawnFloatingText(location, text(causeOfDeath));
+    }
+
+    private void spawnFloatingText(Location location, Component text){
+        location = location.clone().add(0.5, DeathHead.ARMOR_STAND_HEIGHT, 0.5);
+
+        ArmorStand stand = location.getWorld().spawn(location, ArmorStand.class);
+        stand.setVisible(false);
+        stand.customName(text);
+        stand.setCustomNameVisible(true);
+        stand.setMarker(true);
+        stand.setGravity(false);
+        stand.setSilent(true);
     }
 
     private Location createHead(Player player, Block block, Instant timeNow, String causeOfDeath){

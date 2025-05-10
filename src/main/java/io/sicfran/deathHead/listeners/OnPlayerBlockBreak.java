@@ -24,9 +24,6 @@ import java.util.UUID;
 
 import static net.kyori.adventure.text.Component.text;
 
-//Considerations:
-// - Close inventory if head is broken
-
 public class OnPlayerBlockBreak implements Listener {
 
     private final DeathHead plugin;

@@ -8,16 +8,13 @@ import io.papermc.paper.command.brigadier.argument.resolvers.selector.PlayerSele
 import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
 import io.sicfran.deathHead.data.InventoryManager;
 import io.sicfran.deathHead.listeners.*;
-import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
-import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockState;
 import org.bukkit.block.TileState;
 import org.bukkit.command.CommandSender;
-import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
@@ -35,9 +32,6 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.UUID;
-
-import static net.kyori.adventure.text.Component.text;
-import static net.kyori.adventure.text.format.TextColor.color;
 
 @SuppressWarnings("UnstableApiUsage")
 public final class DeathHead extends JavaPlugin {
@@ -153,11 +147,6 @@ public final class DeathHead extends JavaPlugin {
         skullMeta.getPersistentDataContainer().set(getCauseOfDeathKey(), PersistentDataType.STRING, causeOfDeath);
     }
 
-    public void spawnDeathHeadInfo(Location location, String name, String time){
-        spawnFloatingText(location.clone().add(0, 0.25, 0), text(name, color(0x00d0ff)));
-        spawnFloatingText(location, text(time, color(0x00d0ff)));
-    }
-
     public boolean isProtectedHead(Block block){
         BlockState state = block.getState();
 
@@ -169,18 +158,6 @@ public final class DeathHead extends JavaPlugin {
         return container.has(getPlayerUUIDKey(), PersistentDataType.STRING) &&
                 container.has(getTimeOfDeathKey(), PersistentDataType.LONG) &&
                 container.has(getCauseOfDeathKey(), PersistentDataType.STRING);
-    }
-
-    private void spawnFloatingText(Location location, Component text){
-        location = location.clone().add(0.5, ARMOR_STAND_HEIGHT, 0.5);
-
-        ArmorStand stand = location.getWorld().spawn(location, ArmorStand.class);
-        stand.setVisible(false);
-        stand.customName(text);
-        stand.setCustomNameVisible(true);
-        stand.setMarker(true);
-        stand.setGravity(false);
-        stand.setSilent(true);
     }
 
     public void preventDupeForOpenedInv(){
