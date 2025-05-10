@@ -2,12 +2,16 @@ package io.sicfran.deathHead;
 
 import com.mojang.brigadier.Command;
 import com.mojang.brigadier.context.CommandContext;
+import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
+import io.papermc.paper.command.brigadier.argument.resolvers.selector.PlayerSelectorArgumentResolver;
+import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
 import io.sicfran.deathHead.data.InventoryManager;
 import io.sicfran.deathHead.listeners.*;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
+import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockState;
@@ -16,6 +20,7 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Listener;
+import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataHolder;
@@ -26,11 +31,15 @@ import org.bukkit.block.Skull;
 import org.bukkit.inventory.meta.SkullMeta;
 
 import java.time.Instant;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.UUID;
 
 import static net.kyori.adventure.text.Component.text;
 import static net.kyori.adventure.text.format.TextColor.color;
 
+@SuppressWarnings("UnstableApiUsage")
 public final class DeathHead extends JavaPlugin {
 
     private static final String VERSION = "1.0";
@@ -46,18 +55,44 @@ public final class DeathHead extends JavaPlugin {
 
         Bukkit.getScheduler().runTask(this, inventoryManager::loadInventories);
 
+        this.getLifecycleManager().registerEventHandler(
+                LifecycleEvents.COMMANDS, commands ->
+                        commands.registrar().register(new CommandTree(this).createCommand().build())
+        );
+
         getLogger().info("DeathHead " + VERSION + " successfully loaded!");
     }
 
     @Override
     public void onDisable() {
-        preventDupeOnServerShutdown();
+        preventDupeForOpenedInv();
     }
 
     public int printInfo(CommandContext<CommandSourceStack> ctx){
         CommandSender sender = ctx.getSource().getSender();
         sender.sendMessage(inventoryManager.getOpenInventories().toString());
+
         return Command.SINGLE_SUCCESS;
+    }
+
+    public int removeBlockUnderPlayer(CommandContext<CommandSourceStack> ctx){
+        try{
+            final PlayerSelectorArgumentResolver resolver = ctx.getArgument("player", PlayerSelectorArgumentResolver.class);
+            Player player = resolver.resolve(ctx.getSource()).getFirst();
+            breakBlockAsPlayer(player, player.getLocation().getBlock());
+        } catch (CommandSyntaxException e) {
+            throw new RuntimeException(e);
+        }
+        return Command.SINGLE_SUCCESS;
+    }
+
+    public void breakBlockAsPlayer(Player player, Block block) {
+        BlockBreakEvent event = new BlockBreakEvent(block, player);
+        Bukkit.getPluginManager().callEvent(event);
+
+        if (!event.isCancelled()) {
+            block.setType(Material.AIR);
+        }
     }
 
     private void registerListeners(){
@@ -95,6 +130,12 @@ public final class DeathHead extends JavaPlugin {
     public Long getTimeOfDeathFromSkull(PersistentDataHolder holder){
         PersistentDataContainer container = holder.getPersistentDataContainer();
         return container.get(getTimeOfDeathKey(), PersistentDataType.LONG);
+    }
+
+    public String formatTime(Instant instant){
+        ZonedDateTime zonedDateTime = instant.atZone(ZoneId.systemDefault());
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMMM d, yyyy h:mma z");
+        return zonedDateTime.format(formatter);
     }
 
     public void setPDCtoSkull(Skull skull, Player player, Instant timeOfDeath, String causeOfDeath){
@@ -142,12 +183,13 @@ public final class DeathHead extends JavaPlugin {
         stand.setSilent(true);
     }
 
-    private void preventDupeOnServerShutdown(){
+    public void preventDupeForOpenedInv(){
         // Traverse each player looking inside skull chest
         for (UUID playerId : inventoryManager.getOpenInventories().keySet()){
             Player player = Bukkit.getPlayer(playerId);
             if (player != null){
                 Inventory openInv = player.getOpenInventory().getTopInventory();
+                player.closeInventory(); // force close inventory
                 inventoryManager.saveInventoryChanges(playerId, openInv);
             }
         }

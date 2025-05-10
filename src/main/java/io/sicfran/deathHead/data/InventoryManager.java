@@ -84,8 +84,10 @@ public class InventoryManager {
 
     public void saveInventoryChanges(UUID playerId, Inventory inventory){
         HeadData headData = removeFromOpenInventories(playerId);
-        headData.inventory().setContents(inventory.getContents());
-        saveInventories();
+        if(headData != null){
+            headData.inventory().setContents(inventory.getContents());
+            saveInventories();
+        }
     }
 
     public Map<UUID, HeadData> getOpenInventories() {

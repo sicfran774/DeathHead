@@ -63,6 +63,8 @@ public class OnPlayerBlockBreak implements Listener {
             return;
         }
 
+        plugin.preventDupeForOpenedInv();
+
         for (HeadData head : playerData){
             // Find the specific skull that the player broke
             if (head.location().equals(location)){
@@ -99,7 +101,9 @@ public class OnPlayerBlockBreak implements Listener {
         List<Component> lore = new ArrayList<>();
 
         lore.add(text(plugin.getCauseOfDeathFromSkull(skull)));
-        lore.add(text(Instant.ofEpochMilli(plugin.getTimeOfDeathFromSkull(skull)).toString()));
+
+        Instant instant = Instant.ofEpochMilli(plugin.getTimeOfDeathFromSkull(skull));
+        lore.add(text(plugin.formatTime(instant)));
 
         return lore;
     }
