@@ -11,7 +11,8 @@ import java.util.*;
 public class InventoryManager {
 
     private final Map<UUID, List<HeadData>> players = new HashMap<>();
-    private final Map<UUID, HeadData> openInventories = new HashMap<>();
+    private final Map<Inventory, HeadData> openInventories = new HashMap<>();
+    private final Map<UUID, HeadData> openInventoriesByPlayer = new HashMap<>();
     private final DeathHead plugin;
     private final File playerDataFile;
     private final YamlConfiguration config;
@@ -74,24 +75,37 @@ public class InventoryManager {
         }
     }
 
-    public void addToOpenInventories(UUID playerId, HeadData head){
-        openInventories.put(playerId, head);
+    public void addToOpenInventories(Inventory inventory, HeadData head){
+        openInventories.put(inventory, head);
     }
 
-    public HeadData removeFromOpenInventories(UUID playerId){
-        return openInventories.remove(playerId);
+    public HeadData removeFromOpenInventories(Inventory inventory){
+        return openInventories.remove(inventory);
     }
 
-    public void saveInventoryChanges(UUID playerId, Inventory inventory){
-        HeadData headData = removeFromOpenInventories(playerId);
+    public void addToOpenPlayerInventories(UUID playerId, HeadData head){
+        openInventoriesByPlayer.put(playerId, head);
+    }
+
+    public void removeFromOpenPlayerInventories(UUID playerId){
+        openInventoriesByPlayer.remove(playerId);
+    }
+
+    public void saveInventoryChanges(Inventory inventory, UUID playerId){
+        HeadData headData = removeFromOpenInventories(inventory);
+        removeFromOpenPlayerInventories(playerId);
         if(headData != null){
             headData.inventory().setContents(inventory.getContents());
             saveInventories();
         }
     }
 
-    public Map<UUID, HeadData> getOpenInventories() {
+    public Map<Inventory, HeadData> getOpenInventories() {
         return openInventories;
+    }
+
+    public Map<UUID, HeadData> getOpenInventoriesByPlayer(){
+        return openInventoriesByPlayer;
     }
 
     public List<HeadData> getAllHeadData(UUID playerId){

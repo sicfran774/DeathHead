@@ -3,6 +3,7 @@ package io.sicfran.deathHead.listeners;
 import io.sicfran.deathHead.DeathHead;
 import io.sicfran.deathHead.data.HeadData;
 import net.kyori.adventure.text.Component;
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
@@ -35,7 +36,6 @@ public class OnPlayerBlockBreak implements Listener {
     @EventHandler
     public void onPlayerBlockBreak(BlockBreakEvent event){
         Block block = event.getBlock();
-        Player player = event.getPlayer();
 
         if(!(block.getState() instanceof Skull skull)){
             return;
@@ -49,6 +49,11 @@ public class OnPlayerBlockBreak implements Listener {
         List<HeadData> playerData = plugin.getInventoryManager().getAllHeadData(playerId);
 
         if(playerId == null || timeOfDeath == null || causeOfDeath == null){
+            return;
+        }
+
+        Player player = Bukkit.getPlayer(playerId);
+        if(player == null){
             return;
         }
 

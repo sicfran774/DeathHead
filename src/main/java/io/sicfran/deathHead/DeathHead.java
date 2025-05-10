@@ -65,6 +65,7 @@ public final class DeathHead extends JavaPlugin {
     public int printInfo(CommandContext<CommandSourceStack> ctx){
         CommandSender sender = ctx.getSource().getSender();
         sender.sendMessage(inventoryManager.getOpenInventories().toString());
+        sender.sendMessage(inventoryManager.getOpenInventoriesByPlayer().toString());
 
         return Command.SINGLE_SUCCESS;
     }
@@ -162,12 +163,14 @@ public final class DeathHead extends JavaPlugin {
 
     public void preventDupeForOpenedInv(){
         // Traverse each player looking inside skull chest
-        for (UUID playerId : inventoryManager.getOpenInventories().keySet()){
+        for (UUID playerId : inventoryManager.getOpenInventoriesByPlayer().keySet()){
             Player player = Bukkit.getPlayer(playerId);
-            if (player != null){
+            if (player != null && player.isOnline()){
                 Inventory openInv = player.getOpenInventory().getTopInventory();
                 player.closeInventory(); // force close inventory
-                inventoryManager.saveInventoryChanges(playerId, openInv);
+                if (inventoryManager.getOpenInventories().containsKey(openInv)){
+                    inventoryManager.saveInventoryChanges(openInv, playerId);
+                }
             }
         }
     }

@@ -48,7 +48,8 @@ public class OnPlayerInteract implements Listener {
             // Find specific head inventory at this location
             if (head.location().equals(skull.getLocation())){
                 player.openInventory(head.inventory());
-                plugin.getInventoryManager().addToOpenInventories(playerId, head); //Save for later to deal with
+                plugin.getInventoryManager().addToOpenInventories(head.inventory(), head); //Save for later to update inventories based on changes
+                plugin.getInventoryManager().addToOpenPlayerInventories(player.getUniqueId(), head); // Save the player who's currently on this head
                 break;
             }
         }

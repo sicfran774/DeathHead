@@ -7,8 +7,6 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.inventory.Inventory;
 
-import java.util.UUID;
-
 public class OnInventoryChange implements Listener {
 
     private final DeathHead plugin;
@@ -19,14 +17,12 @@ public class OnInventoryChange implements Listener {
 
     @EventHandler
     public void onInventoryClose(InventoryCloseEvent event){
-        UUID playerId = event.getPlayer().getUniqueId();
         Inventory inventory = event.getInventory();
-
         InventoryManager invManager = plugin.getInventoryManager();
 
         // If this is one of the heads open
-        if (invManager.getOpenInventories().containsKey(playerId)){
-            invManager.saveInventoryChanges(playerId, inventory);
+        if (invManager.getOpenInventories().containsKey(inventory)){
+            invManager.saveInventoryChanges(inventory, event.getPlayer().getUniqueId());
         }
     }
 }
